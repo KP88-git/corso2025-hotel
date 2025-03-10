@@ -3,6 +3,7 @@ package corso.java.hotel.client;
 import corso.java.hotel.model.Ospite;
 import corso.java.hotel.model.Prenotazione;
 import java.sql.Connection;
+import java.sql.Date;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -75,18 +76,18 @@ public class HotelClientV1 implements HotelClient {
 	}
 
 	@Override
-	public void prenota(Prenotazione p) {
+	public void prenota(Date checkin_data, Date checkout_data, int camera_id, List<Ospite> ospiti) {
 
 		PreparedStatement pstmt = null;
 		ResultSet rsGenId = null;
 
-		int numero_persone = p.getOspiti().size();
+		int numero_persone = ospiti.size();
 
 		if (numero_persone == 1) {
-			System.out.printf("Prenoto camera %s per %s %s.\n", p.getCamera_id(),
-					p.getOspiti().getFirst().getNome(), p.getOspiti().getFirst().getCognome());
+			System.out.printf("Prenoto camera %s per %s %s.\n", camera_id,
+					ospiti.getFirst().getNome(), ospiti.getFirst().getCognome());
 		} else if (numero_persone > 1) {
-			System.out.printf("Prenoto camera %s per %s ospiti.\n", p.getCamera_id(), numero_persone);
+			System.out.printf("Prenoto camera %s per %s ospiti.\n", camera_id, numero_persone);
 		} else {
 			System.out.printf("ERRORE! numero ospiti non valido: %s.\n", numero_persone);
 			// TODO: lancio una exception?
@@ -99,10 +100,10 @@ public class HotelClientV1 implements HotelClient {
 
 			String sql = "INSERT INTO prenotazioni (checkin_data, checkout_data, numero_persone, camera_id) VALUES (?, ?, ?, ?)";
 			pstmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
-			pstmt.setDate(1, p.getCheckin_data());
-			pstmt.setDate(2, p.getCheckout_data());
+			pstmt.setDate(1, checkin_data);
+			pstmt.setDate(2, checkout_data);
 			pstmt.setInt(3, numero_persone);
-			pstmt.setInt(4, p.getCamera_id());
+			pstmt.setInt(4, camera_id);
 
 			int righeInserite = pstmt.executeUpdate(); // Esegue l'INSERT
 			rsGenId = pstmt.getGeneratedKeys();
@@ -115,7 +116,7 @@ public class HotelClientV1 implements HotelClient {
 				// TODO: throw eccezione
 			}
 
-			for (Ospite o : p.getOspiti()) {
+			for (Ospite o : ospiti) {
 				System.out.printf("Aggiungo ospite id %s alla prenotazione id %s.\n", o.getOspite_id(),
 						genId);
 				String sql2 = "INSERT INTO prenotazione_ospiti (prenotazione_id, ospite_id) VALUES (?, ?)";
@@ -213,6 +214,50 @@ public class HotelClientV1 implements HotelClient {
 			ex.printStackTrace();
 		}
 
+	}
+
+	@Override
+	public List<Ospite> listaOspiti() {
+		Statement stmt = null;
+		ResultSet rs = null;
+		List<Ospite> ospiti = new ArrayList<Ospite>();
+		System.out.println("Prendo lista completa di Ospiti.");
+
+		try {
+
+			String sql = "SELECT * FROM ospiti";
+			stmt = conn.createStatement();
+			rs = stmt.executeQuery(sql);
+			
+			
+			
+			while (rs.next()) {
+				ospiti.add(new Ospite(
+						rs.getInt("ospite_id"),
+						rs.getString("nome"),
+						rs.getString("cognome"),
+						rs.getString("email"),
+						rs.getString("telefono")
+						));
+			}
+			
+			return ospiti;
+			
+		} catch (SQLException ex) {
+			ex.printStackTrace();
+		} finally {
+			// Chiudere tutte le risorse nel blocco finally per garantirne la chiusura
+			try {
+				if (stmt != null)
+					stmt.close();
+				if (rs != null)
+					rs.close();
+			} catch (SQLException ex) {
+				ex.printStackTrace();
+			}
+		}
+
+		return null;
 	}
 
 }

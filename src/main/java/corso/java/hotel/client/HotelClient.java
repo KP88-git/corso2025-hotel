@@ -1,6 +1,9 @@
 package corso.java.hotel.client;
 
+import corso.java.hotel.model.Ospite;
 import corso.java.hotel.model.Prenotazione;
+
+import java.sql.Date;
 import java.util.List;
 
 public interface HotelClient {
@@ -18,10 +21,13 @@ public interface HotelClient {
 	 */
 	
 	public int inserisciOspite(String nome, String cognome, String email, String telefono);
-	
-	public void prenota(Prenotazione prenotazione);
+
+	//public void prenota(Prenotazione prenotazione);
+	public void prenota(Date checkin_data, Date checkout_data, int camera_id, List<Ospite> ospiti);
 	
 	public List<Prenotazione> listaPrenotazioni();
+	
+	public List<Ospite> listaOspiti();
 	
 
 }
